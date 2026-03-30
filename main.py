@@ -4,7 +4,6 @@ from agent import career_agent
 
 app = FastAPI()
 
-# ✅ THIS MUST BE HERE
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,4 +18,4 @@ def home():
 
 @app.get("/ask")
 def ask(q: str):
-    return {"response": career_agent(q)}
+    return career_agent(q)   # ✅ returning JSON directly
