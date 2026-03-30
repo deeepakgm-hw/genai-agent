@@ -4,6 +4,7 @@ from agent import career_agent
 
 app = FastAPI()
 
+# ✅ THIS MUST BE HERE
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
