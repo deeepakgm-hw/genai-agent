@@ -21,41 +21,38 @@ export default function App() {
 
   const startListening = () => {
     if (!recognition) return alert("Voice not supported");
+
     recognition.start();
     recognition.onresult = (e) => {
       setInput(e.results[0][0].transcript);
     };
   };
 
-  // 🧠 Parse AI response
-  const parseResponse = (text) => {
-    return {
-      confidence: text.split("1. Confidence Feedback:")[1]?.split("2.")[0]?.trim(),
-      strengths: text.split("2. Strengths:")[1]?.split("3.")[0]?.trim(),
-      weaknesses: text.split("3. Weaknesses:")[1]?.split("4.")[0]?.trim(),
-      improved: text.split("4. Improved Answer:")[1]?.split("5.")[0]?.trim(),
-      score: text.split("5. Final Score:")[1]?.trim(),
-    };
-  };
-
-  // 🚀 Send message
+  // 🚀 SEND MESSAGE (FINAL FIXED)
   const sendMessage = async () => {
     if (!input) return;
 
-    setMessages((prev) => [...prev, { role: "user", text: input }]);
+    const userMsg = { role: "user", text: input };
+
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/ask?q=${input}`);
+      const res = await fetch(
+        `${API_URL}/ask?q=${encodeURIComponent(input)}`
+      );
+
       const data = await res.json();
 
-      if (!res.ok) throw new Error();
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", data: data }, // ✅ JSON response
+      ]);
 
-      const parsed = parseResponse(data.response);
-
-      setMessages((prev) => [...prev, { role: "ai", data: parsed }]);
     } catch (err) {
+      console.error(err);
+
       setMessages((prev) => [
         ...prev,
         { role: "ai", text: "⚠️ Server error. Try again." },
@@ -65,13 +62,13 @@ export default function App() {
     setLoading(false);
   };
 
-  // 🧠 Load memory
+  // 💾 Load chat
   useEffect(() => {
     const saved = localStorage.getItem("chat");
     if (saved) setMessages(JSON.parse(saved));
   }, []);
 
-  // 💾 Save memory
+  // 💾 Save chat
   useEffect(() => {
     localStorage.setItem("chat", JSON.stringify(messages));
   }, [messages]);
@@ -95,14 +92,14 @@ export default function App() {
 
         <button
           onClick={newChat}
-          className="w-full p-2 mb-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-105 transition"
+          className="w-full p-2 mb-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
         >
           + New Chat
         </button>
 
         <div className="text-sm text-gray-400">
-          <p className="mb-2">Recent</p>
-          <ul className="space-y-2">
+          <p>Recent</p>
+          <ul>
             <li>Interview</li>
             <li>Career</li>
           </ul>
@@ -112,7 +109,6 @@ export default function App() {
       {/* Main */}
       <div className="flex flex-col flex-1">
 
-        {/* Header */}
         <div className="p-4 border-b border-white/10">
           AI Career Assistant
         </div>
@@ -134,16 +130,16 @@ export default function App() {
 
               {msg.role === "ai" && <div>🤖</div>}
 
-              {/* USER MESSAGE */}
+              {/* USER */}
               {msg.role === "user" && (
-                <div className="ml-auto bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl max-w-xl">
+                <div className="ml-auto bg-blue-600 p-3 rounded-xl max-w-xl">
                   {msg.text}
                 </div>
               )}
 
-              {/* AI MESSAGE */}
+              {/* AI */}
               {msg.role === "ai" && msg.data && (
-                <div className="bg-white/10 backdrop-blur-xl border border-white/10 p-4 rounded-xl space-y-2 max-w-xl">
+                <div className="bg-white/10 p-4 rounded-xl space-y-2 max-w-xl">
 
                   <p><b>💬 Confidence:</b> {msg.data.confidence}</p>
 
@@ -151,7 +147,7 @@ export default function App() {
 
                   <p><b>⚠️ Weaknesses:</b><br />{msg.data.weaknesses}</p>
 
-                  <p><b>✨ Improved Answer:</b><br />{msg.data.improved}</p>
+                  <p><b>✨ Improved:</b><br />{msg.data.improved}</p>
 
                   <p className="text-green-400 font-bold">
                     🎯 Score: {msg.data.score}
@@ -160,7 +156,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* ERROR MESSAGE */}
+              {/* ERROR */}
               {msg.role === "ai" && msg.text && (
                 <div className="bg-red-500/20 p-3 rounded-xl">
                   {msg.text}
@@ -170,40 +166,26 @@ export default function App() {
             </div>
           ))}
 
-          {loading && <p className="text-gray-400">🤖 Thinking...</p>}
+          {loading && <p>🤖 Thinking...</p>}
 
           <div ref={bottomRef} />
         </div>
 
         {/* Input */}
-        <div className="p-4 flex justify-center">
-          <div className="flex w-full max-w-3xl bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl p-2 gap-2">
+        <div className="p-4 flex gap-2">
 
-            <button
-              onClick={startListening}
-              className="px-3 text-xl hover:scale-110 transition"
-            >
-              🎤
-            </button>
+          <button onClick={startListening}>🎤</button>
 
-            <input
-              className="flex-1 bg-transparent outline-none px-3"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything..."
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            />
+          <input
+            className="flex-1 bg-black/50 p-2 rounded"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          />
 
-            <button
-              onClick={sendMessage}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-105 transition"
-            >
-              Send
-            </button>
+          <button onClick={sendMessage}>Send</button>
 
-          </div>
         </div>
-
       </div>
     </div>
   );
