@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🌌 FULL DARK BACKGROUND */
+body {
+  background: linear-gradient(to bottom right, #020617, #0f172a, #020617);
+  color: white;
+}
+
+/* ✨ Glow */
+.glow {
+  box-shadow: 0 0 20px rgba(59,130,246,0.6);
+}
+
+/* 🤖 typing cursor */
+.typing::after {
+  content: "|";
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,100% {opacity:0}
+  50% {opacity:1}
+}
